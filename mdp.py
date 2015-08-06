@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+# TODO: Reorganize within a module
 
+__title__ = "mdp"
 __copyright__ = "Copyright 2015, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPL"
 __version__ = "0.1"
-__date__ = "2015-08-06"
+__date__ = "2015-08-07"
 __maintainer__ = "Pierre Faivre"
 __status__ = "Developement"
 
@@ -14,13 +16,20 @@ import os
 from os.path import expanduser
 import sys
 import errno
-import pyperclip as pyperclip
+try:
+    import pyperclip as pyperclip
+except ImportError:
+    # TODO: Make the pyperclip missing error non blocking
+    print("mdp: Error: The module pyperclip is missing", file=sys.stderr)
+    sys.exit(1)
 
 DEFAULT_OUTPUT_DIR = expanduser("~")
 VALID_COMMANDS = ("get", "set", "del", "exit")
 
 
 class Password:
+    """ Represents a password for a couple login/domain
+    """
     def __init__(self, domain: str, login: str, password: str):
         self.domain = domain
         self.login = login
@@ -34,8 +43,7 @@ class Password:
 
 
 def create_pass_file(file_path: str) -> str:
-    """
-    Create a new pass file
+    """ Create a new pass file
     :param file_path: Full path to the file
     :return: The new master password entered by the user
     :rtype : str
@@ -53,20 +61,16 @@ def create_pass_file(file_path: str) -> str:
         else:
             password_match = True
 
-    # pass_file = open(file_path, "w")
-    # pass_file.write("")
-    # pass_file.close()
-
     with open(file_path, "w") as file:
         passwords = list()
-        json_content = json.dumps(passwords, indent=True)
+        json_content = json.dumps(passwords, indent=4)
         file.write(json_content)
 
     return new_password
 
 
 def load_pass_file(file_path: str) -> list:
-    """
+    """ Loads passwords from the crypted Json file
     :param file_path:
     :return: List of the passwords in the file
     :rtype : list
@@ -74,6 +78,7 @@ def load_pass_file(file_path: str) -> list:
     with open(file_path) as file:
         master_password = getpass()
         json_passwords = json.load(file)
+        # TODO: Decrypt the Json content
 
     passwords = []
     for p in json_passwords:
@@ -82,17 +87,23 @@ def load_pass_file(file_path: str) -> list:
     return passwords
 
 
-def save_pass_file(file_path: str, passwords: list, user_password: str):
-    """
-    :param file_path:
-    :param passwords:
+def save_pass_file(file_path: str, passwords: list, user_password=None):
+    """ Encrypt and save a Json file containing the passwords
+    :param file_path: File to write the passwords
+    :param passwords: List of the passwords to write
     :param user_password: Password to encrypt the file
     """
-    pass
+    with open(file_path, 'w') as file:
+        json_passwords = json.dumps(obj=passwords,
+                                    default=lambda o: o.__dict__,
+                                    sort_keys=True,
+                                    indent=4)
+        # TODO: Encrypt the Json content
+        file.write(json_passwords)
 
 
 def get_password(file_path: str, domain=None, login=None):
-    """
+    """ Helps the user to get a password
     :param file_path: Path to the passwords file
     :param domain: Filter by domain
     :param login: Filter by login
@@ -114,7 +125,7 @@ def get_password(file_path: str, domain=None, login=None):
 
     # Printing matching accounts
     for i, p in enumerate(match_passwords):
-        print("    \033[00;33m{0}. \033[00;00m{1}\033[00;00m".format(i+1, p))
+        print("    \033[00;33m{0}. \033[00;00m{1}".format(i+1, p))
 
     # Selecting which one to get
     number = -1 if len(match_passwords) > 1 else 1
@@ -132,7 +143,7 @@ def get_password(file_path: str, domain=None, login=None):
 
 
 def set_password(file_path: str, domain=None, login=None):
-    """
+    """ Helps the user to define a password
     :param file_path: Path to the passwords file
     :param domain: The domain
     :param login: The login
@@ -144,25 +155,75 @@ def set_password(file_path: str, domain=None, login=None):
         domain = input("Domain for the new password > ")
     if login is None:
         login = input("Login for the new password > ")
-    password = getpass("Password for this account > ")
+    new_password = getpass("Password for this account > ")
 
     # Searching for an existing entry with theses informations
     match_passwords = list(filter(lambda p: domain == p.domain, passwords))
     match_passwords = list(filter(lambda p: login == p.login, match_passwords))
 
+    # In case this password already exists
     if len(match_passwords) > 0:
-        answer = input("this account already exists, do you want to update "
-                       "the password? "
-                       "(\033[00;32my\033[00;00m, \033[00;31mn\033[00;00m) > ")
+        print("this account already exists, do you want to update the "
+              "password? (y, n)")
+        answer = input("> ")
+        if answer.lower() in ("y", "yes"):
+            # Update it
+            match_passwords[0].password = new_password
+        else:
+            return
+    # In case it doesn't exists yet
+    else:
+        # Create it
+        passwords.append(Password(domain, login, new_password))
+
+    # And finally write it on the file
+    save_pass_file(file_path, passwords)
 
 
 def del_password(file_path: str, domain=None, login=None):
-    """
+    """ Helps the user to delete a(some) password(s)
     :param file_path: Path to the passwords file
     :param domain: Filter by domain
     :param login: Filter by login
     """
-    raise NotImplementedError("del")
+    passwords = load_pass_file(file_path)
+
+    if domain is None:
+        domain = input("Any specific domain? (leave blank if not) > ")
+    if login is None:
+        login = input("Any specific login? (leave blank if not) > ")
+
+    # Filtering results
+    match_passwords = [p for p in passwords if domain in p.domain]
+    match_passwords = [p for p in match_passwords if login in p.login]
+
+    if len(match_passwords) < 1:
+        print("No account for theses filters.")
+        return
+
+    # Printing matching accounts
+    for i, p in enumerate(match_passwords):
+        print("    \033[00;33m{0}. \033[00;00m{1}".format(i+1, p))
+
+    # Selecting which ones to delete
+    numbers = ()
+    while len(numbers) <= 0:
+        try:
+            user_input = input("Which ones to delete? > ")
+            # Splits the strings and deletes duplicates with set()
+            user_input = set(user_input.split())
+            # Converts in int() the numbers entered by the user
+            numbers = sorted([int(n) for n in user_input
+                              if 0 < int(n) <= len(match_passwords)])
+        except ValueError:
+            numbers = ()
+
+    # Deletes the selected entries
+    for i in reversed(numbers):
+        del passwords[i-1]
+
+    # And finally save the changes
+    save_pass_file(file_path, passwords)
 
 
 def main(argv: list):
@@ -199,6 +260,7 @@ def main(argv: list):
         while mode not in VALID_COMMANDS:
             mode = input("What do you want to do? {0}\n> "
                          .format(VALID_COMMANDS))
+            # TODO: Add a help and version commands
             if mode not in VALID_COMMANDS:
                 print("Unknown command : '{0}'".format(mode))
 
