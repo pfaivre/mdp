@@ -1,26 +1,35 @@
 #!/usr/bin/env python3
-# TODO: Reorganize within a module
+# TODO: Reorganize within a module and classes
+# TODO: Create unit tests
 
 __title__ = "mdp"
 __copyright__ = "Copyright 2015, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPL"
-__version__ = "0.1"
-__date__ = "2015-08-07"
+__version__ = "0.2"
+__date__ = "2015-08-09"
 __maintainer__ = "Pierre Faivre"
 __status__ = "Developement"
 
+import errno
 from getpass import getpass
+import hashlib
 import json
 import os
 from os.path import expanduser
 import sys
-import errno
 try:
     import pyperclip as pyperclip
 except ImportError:
     # TODO: Make the pyperclip missing error non blocking
     print("mdp: Error: The module pyperclip is missing", file=sys.stderr)
+    sys.exit(1)
+try:
+    from Crypto.Cipher import AES
+    from Crypto import Random
+except ImportError:
+    print("mdp: Error: The module pycrypto (python-crypto) is missing",
+          file=sys.stderr)
     sys.exit(1)
 
 DEFAULT_OUTPUT_DIR = expanduser("~")
@@ -36,7 +45,7 @@ class Password:
         self.password = password
 
     def __repr__(self):
-        return "{0} {1}".format(self.domain, self.login, self.password)
+        return "{0} {1}".format(self.domain, self.login)
 
     def __str__(self):
         return "{0}\t{1}".format(self.domain, self.login)
@@ -61,10 +70,7 @@ def create_pass_file(file_path: str) -> str:
         else:
             password_match = True
 
-    with open(file_path, "w") as file:
-        passwords = list()
-        json_content = json.dumps(passwords, indent=4)
-        file.write(json_content)
+    save_pass_file(file_path, [], new_password)
 
     return new_password
 
@@ -75,31 +81,90 @@ def load_pass_file(file_path: str) -> list:
     :return: List of the passwords in the file
     :rtype : list
     """
-    with open(file_path) as file:
-        master_password = getpass()
-        json_passwords = json.load(file)
-        # TODO: Decrypt the Json content
+    with open(file_path, "rb") as file:
+        # Reads the crypted file
+        file_crypted = file.read()
 
+    wrong_password = True
+    while wrong_password:
+        master_password = getpass()
+
+        # Creating a key by hashing the password
+        key = hashlib.sha256(master_password.encode("utf-8")).digest()
+
+        # Creating a new instance of decrypter given the key and the IV.
+        crypto = AES.new(key, AES.MODE_CBC, file_crypted[:16])
+
+        try:
+            plain = crypto.decrypt(file_crypted[16:])
+        except ValueError:
+            print("mdp: Error: the crypted file '{0}' seems to be corrupted."
+                  .format(file_path),
+                  file=sys.stderr)
+            sys.exit(1)
+
+        padding_length = int((plain[-1]))
+        if padding_length > AES.block_size and padding_length != 32:
+            # 32 is the space character and is kept for backwards compatibility
+            wrong_password = True
+        elif padding_length == 32:
+            plain = plain.strip()
+            wrong_password = False
+        elif plain[-padding_length:] != bytes((padding_length,)) * padding_length:
+            # Invalid padding!
+            wrong_password = True
+        else:
+            plain = plain[:-padding_length]
+            wrong_password = False
+
+        if wrong_password:
+            print("Wrong password, try again.")
+
+    # Getting back to UTF-8
+    file_decrypted = plain.decode("utf-8")
+
+    json_passwords = json.loads(file_decrypted)
+
+    # TODO: Add an automatic Json parser
     passwords = []
     for p in json_passwords:
         passwords.append(Password(p["domain"], p["login"], p["password"]))
 
-    return passwords
+    return passwords, master_password
 
 
-def save_pass_file(file_path: str, passwords: list, user_password=None):
+def save_pass_file(file_path: str, passwords: list, master_password: str):
     """ Encrypt and save a Json file containing the passwords
     :param file_path: File to write the passwords
     :param passwords: List of the passwords to write
-    :param user_password: Password to encrypt the file
+    :param master_password: Password to encrypt the file
     """
-    with open(file_path, 'w') as file:
-        json_passwords = json.dumps(obj=passwords,
-                                    default=lambda o: o.__dict__,
-                                    sort_keys=True,
-                                    indent=4)
-        # TODO: Encrypt the Json content
-        file.write(json_passwords)
+    json_passwords = json.dumps(obj=passwords,
+                                default=lambda o: o.__dict__,
+                                sort_keys=True,
+                                indent=4)
+
+    # Creating a key by hashing the password
+    key = hashlib.sha256(master_password.encode("utf-8")).digest()
+
+    # New seed for PyCrypto
+    Random.atfork()
+
+    # Generating initialization vector
+    iv = Random.new().read(AES.block_size)
+
+    crypto = AES.new(key, AES.MODE_CBC, iv)
+    plain = json_passwords.encode("utf-8")
+
+    # Adding some data at the end to match the block size required by AES
+    padding_length = AES.block_size - len(plain) % AES.block_size
+    plain += bytes((padding_length,)) * padding_length
+
+    # Finally creating the crypted data
+    crypted_passwords = iv + crypto.encrypt(plain)
+
+    with open(file_path, 'wb') as file:
+        file.write(crypted_passwords)
 
 
 def get_password(file_path: str, domain=None, login=None):
@@ -108,7 +173,7 @@ def get_password(file_path: str, domain=None, login=None):
     :param domain: Filter by domain
     :param login: Filter by login
     """
-    passwords = load_pass_file(file_path)
+    passwords, master_password = load_pass_file(file_path)
 
     if domain is None:
         domain = input("Any specific domain? (leave blank if not) > ")
@@ -148,7 +213,7 @@ def set_password(file_path: str, domain=None, login=None):
     :param domain: The domain
     :param login: The login
     """
-    passwords = load_pass_file(file_path)
+    passwords, master_password = load_pass_file(file_path)
 
     # Getting the informations
     if domain is None:
@@ -177,7 +242,7 @@ def set_password(file_path: str, domain=None, login=None):
         passwords.append(Password(domain, login, new_password))
 
     # And finally write it on the file
-    save_pass_file(file_path, passwords)
+    save_pass_file(file_path, passwords, master_password)
 
 
 def del_password(file_path: str, domain=None, login=None):
@@ -186,7 +251,7 @@ def del_password(file_path: str, domain=None, login=None):
     :param domain: Filter by domain
     :param login: Filter by login
     """
-    passwords = load_pass_file(file_path)
+    passwords, master_password = load_pass_file(file_path)
 
     if domain is None:
         domain = input("Any specific domain? (leave blank if not) > ")
@@ -220,10 +285,10 @@ def del_password(file_path: str, domain=None, login=None):
 
     # Deletes the selected entries
     for i in reversed(numbers):
-        del passwords[i-1]
+        passwords.remove(match_passwords[i-1])
 
     # And finally save the changes
-    save_pass_file(file_path, passwords)
+    save_pass_file(file_path, passwords, master_password)
 
 
 def main(argv: list):
@@ -246,13 +311,14 @@ def main(argv: list):
               file=sys.stderr)
         sys.exit(errno.EINVAL)
 
+    # TODO: Let the user configure the password file
     # Checking pass file
     pass_file_path = os.path.join(DEFAULT_OUTPUT_DIR, "pass.txt")
 
     if not os.path.isfile(pass_file_path):
         print("{0} is not found, it will be created."
               .format(pass_file_path))
-        user_password = create_pass_file(pass_file_path)
+        master_password = create_pass_file(pass_file_path)
 
     # Executing user command
     if mode == "interactive":

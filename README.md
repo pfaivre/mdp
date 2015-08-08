@@ -27,7 +27,7 @@ $ mdp get [domain] [login]
 
 To add a new password:
 ```sh
-$ mdp add [domain] [login]
+$ mdp set [domain] [login]
 ```
 
 To delete an existing password:
