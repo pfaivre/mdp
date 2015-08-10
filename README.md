@@ -11,7 +11,7 @@ this program can store your passwords on a crypted file and allows you to acces
 it in a very simple way.
 
 Each password has 3 informations:
-* Domain : (or service or URL) where the account is registred
+* Domain : (or service or URL) where the account is registered
 * Login : identifier for the account
 * Password
 

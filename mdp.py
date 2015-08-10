@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-# TODO: Reorganize within a module and classes
 # TODO: Create unit tests
 
 __title__ = "mdp"
 __copyright__ = "Copyright 2015, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPL"
-__version__ = "0.2"
-__date__ = "2015-08-09"
+__version__ = "0.3.0"
+__date__ = "2015-08-10"
 __maintainer__ = "Pierre Faivre"
-__status__ = "Developement"
+__status__ = "Development"
 
 import errno
 from getpass import getpass
-import hashlib
 import json
 import os
 from os.path import expanduser
@@ -24,31 +22,12 @@ except ImportError:
     # TODO: Make the pyperclip missing error non blocking
     print("mdp: Error: The module pyperclip is missing", file=sys.stderr)
     sys.exit(1)
-try:
-    from Crypto.Cipher import AES
-    from Crypto import Random
-except ImportError:
-    print("mdp: Error: The module pycrypto (python-crypto) is missing",
-          file=sys.stderr)
-    sys.exit(1)
+
+from Keychain import Keychain, Password
+from Cryptography import Cryptography, CorruptedError
 
 DEFAULT_OUTPUT_DIR = expanduser("~")
 VALID_COMMANDS = ("get", "set", "del", "exit")
-
-
-class Password:
-    """ Represents a password for a couple login/domain
-    """
-    def __init__(self, domain: str, login: str, password: str):
-        self.domain = domain
-        self.login = login
-        self.password = password
-
-    def __repr__(self):
-        return "{0} {1}".format(self.domain, self.login)
-
-    def __str__(self):
-        return "{0}\t{1}".format(self.domain, self.login)
 
 
 def create_pass_file(file_path: str) -> str:
@@ -63,10 +42,14 @@ def create_pass_file(file_path: str) -> str:
     password_match = False
     while not password_match:
         new_password = getpass(prompt="New password: ")
+        if len(new_password) < 3:
+            print("The password must have at least 3 characters.")
+            continue
+
         confirm_password = getpass(prompt="Confirm password: ")
 
         if not new_password.__eq__(confirm_password):
-            print("Error: the passwords don't match, please retry.")
+            print("The passwords don't match, please retry.")
         else:
             password_match = True
 
@@ -85,45 +68,34 @@ def load_pass_file(file_path: str) -> list:
         # Reads the crypted file
         file_crypted = file.read()
 
-    wrong_password = True
-    while wrong_password:
+    c = Cryptography()
+    correct_password = False
+    while not correct_password:
         master_password = getpass()
-
-        # Creating a key by hashing the password
-        key = hashlib.sha256(master_password.encode("utf-8")).digest()
-
-        # Creating a new instance of decrypter given the key and the IV.
-        crypto = AES.new(key, AES.MODE_CBC, file_crypted[:16])
-
         try:
-            plain = crypto.decrypt(file_crypted[16:])
-        except ValueError:
-            print("mdp: Error: the crypted file '{0}' seems to be corrupted."
+            correct_password = c.validate(file_crypted, master_password)
+        except CorruptedError as e:
+            print("mdp: Error: The file '{0}' seems to be corrupted."
                   .format(file_path),
                   file=sys.stderr)
             sys.exit(1)
 
-        padding_length = int((plain[-1]))
-        if padding_length > AES.block_size and padding_length != 32:
-            # 32 is the space character and is kept for backwards compatibility
-            wrong_password = True
-        elif padding_length == 32:
-            plain = plain.strip()
-            wrong_password = False
-        elif plain[-padding_length:] != bytes((padding_length,)) * padding_length:
-            # Invalid padding!
-            wrong_password = True
-        else:
-            plain = plain[:-padding_length]
-            wrong_password = False
-
-        if wrong_password:
+        if not correct_password:
             print("Wrong password, try again.")
 
-    # Getting back to UTF-8
-    file_decrypted = plain.decode("utf-8")
+    try:
+        file_decrypted = c.decrypt(file_crypted, master_password)
+    except UnicodeDecodeError as e:
+        print("mdp: Error: Error while decrypting the file. " + e.__str__(),
+              file=sys.stderr)
+        sys.exit(1)
 
-    json_passwords = json.loads(file_decrypted)
+    try:
+        json_passwords = json.loads(file_decrypted)
+    except ValueError as e:
+        print("mdp: Error: Unable to parse the file. " + e.__str__(),
+              file=sys.stderr)
+        sys.exit(1)
 
     # TODO: Add an automatic Json parser
     passwords = []
@@ -144,24 +116,8 @@ def save_pass_file(file_path: str, passwords: list, master_password: str):
                                 sort_keys=True,
                                 indent=4)
 
-    # Creating a key by hashing the password
-    key = hashlib.sha256(master_password.encode("utf-8")).digest()
-
-    # New seed for PyCrypto
-    Random.atfork()
-
-    # Generating initialization vector
-    iv = Random.new().read(AES.block_size)
-
-    crypto = AES.new(key, AES.MODE_CBC, iv)
-    plain = json_passwords.encode("utf-8")
-
-    # Adding some data at the end to match the block size required by AES
-    padding_length = AES.block_size - len(plain) % AES.block_size
-    plain += bytes((padding_length,)) * padding_length
-
-    # Finally creating the crypted data
-    crypted_passwords = iv + crypto.encrypt(plain)
+    c = Cryptography()
+    crypted_passwords = c.encrypt(json_passwords, master_password)
 
     with open(file_path, 'wb') as file:
         file.write(crypted_passwords)
@@ -301,7 +257,7 @@ def main(argv: list):
         mode = "interactive"
     elif argv[0] in ("get", "set", "del"):
         mode = argv[0]
-        # Getting optionnal arguments domain and login
+        # Getting optional arguments domain and login
         if len(argv) > 1:
             domain = argv[1]
         if len(argv) > 2:
