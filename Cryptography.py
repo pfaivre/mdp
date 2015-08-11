@@ -112,5 +112,8 @@ class Cryptography:
             wrong_password = False
 
         # Getting back to UTF-8
-        return plain.decode("utf-8")
+        if not wrong_password:
+            return plain.decode("utf-8")
+        else:
+            return None
 

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-# TODO: Create unit tests
 
 __title__ = "mdp"
 __copyright__ = "Copyright 2015, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPL"
 __version__ = "0.3.0"
-__date__ = "2015-08-10"
+__date__ = "2015-08-11"
 __maintainer__ = "Pierre Faivre"
 __status__ = "Development"
 
