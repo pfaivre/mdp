@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import json
+
 
 class Password:
     """ Represents a password for a couple login/domain
@@ -8,7 +10,6 @@ class Password:
         self.domain = domain
         self.login = login
         self.password = password
-        self.visible = True
 
     def __repr__(self):
         return "{0} {1}".format(self.domain, self.login)
@@ -30,7 +31,13 @@ class Keychain:
     def _from_json(self, json_string: str):
         """ Loads a keychain from a Json string.
         """
-        raise NotImplementedError("Keychain.from_json")
+        json_passwords = json.loads(json_string)
+
+        # TODO: Add an automatic Json parser
+        self._passwords = []
+        for p in json_passwords:
+            self._passwords.append(Password(p["domain"], p["login"],
+                                            p["password"]))
 
     def to_json(self, reduced=True):
         """ Converts the password list in a Json string.
@@ -38,35 +45,57 @@ class Keychain:
         (no spaces nor new lines) or prettily formatted
         :return: A Json string containing all the information
         """
-        raise NotImplementedError("Keychain.to_json")
+        json_passwords = json.dumps(obj=self._passwords,
+                                    default=lambda o: o.__dict__,
+                                    sort_keys=True,
+                                    indent=4 if not reduced else None)
+
+        return json_passwords
 
     def filter(self, domain="", login=""):
-        """ Selects passwords by their domain and login.
-        It doesn't affect the password list, it will just hide the unselected
-        passwords in the enumerate method.
-        :param domain: Filter by domain. Wildcards '?' and '*' are accepted
-        :param login: Filter by login. Wildcards '?' and '*' are accepted
-        :return:
+        """ Returns a list of passwords filtered by their domain and login.
+        :param domain: Filter by domain.
+        :param login: Filter by login.
+        :return: A list of passwords matching the filters
         """
-        raise NotImplementedError("Keychain.filter")
-
-    def get_filtered(self):
-        """ Gives the passwords that have been highlighted by the filter method
-        :return: A list of Password objects
-        """
-        raise NotImplementedError("Keychain.get_filtered")
+        return [p for p in self._passwords
+                if domain in p.domain and login in p.login]
 
     def set(self, domain, login, password, replace=False):
-        """ Defines a new password
+        """ Defines a new password or change an existing one
         :param replace: Replace the password if the entry already exists
+        :return: True if the password has been stored
         """
-        raise NotImplementedError("Keychain.set")
+        matching_passwords = [p for p in self._passwords
+                              if p.domain == domain and p.login == login]
+        nb_matching_passwords = len(matching_passwords)
+        already_exists = nb_matching_passwords > 0
+        password_saved = False
+
+        if already_exists:
+            if replace:
+                matching_passwords[0].password = password
+                password_saved = True
+        else:
+            self._passwords.append(Password(domain, login, password))
+            password_saved = True
+
+        return password_saved
 
     def delete(self, password_obj):
-        """ Remove the password from the keychain
-        :param password_obj: Password object to delete
+        """ Removes the password from the keychain
+        :param password_obj: Password object to remove from the list
+        :return: True on successful deletion
         """
-        raise NotImplementedError("Keychain.delete")
+        success = False
+
+        try:
+            self._passwords.remove(password_obj)
+            success = True
+        except ValueError:
+            success = False
+
+        return success
 
     def __str__(self):
         return "Keychain: {0} passwords".format(len(self._passwords))
