@@ -67,11 +67,11 @@ class TestKeychain(TestCase):
                          "exported json string.")
 
     def test_filter(self):
-        self.assertEqual(len(self.keychain.filter("", "")), 5,
+        self.assertEqual(len(self.keychain.filter("")), 5,
                          "Before filtering, the method 'filter()' "
                          "should return all the 5 passwords.")
 
-        self.assertEqual(len(self.keychain.filter("", "my_mail")), 2,
+        self.assertEqual(len(self.keychain.filter("my_mail")), 2,
                          "Only 2 passwords which login contains 'my_mail'.")
 
     def test_set(self):

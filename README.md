@@ -20,22 +20,18 @@ All the passwords are stored in a human readable text file; which is crypted
 with a master password using the highly secure AES algorithm.
 
 ## Usage
-To get the password associated to an account:
+The program is fully interactive :
 ```sh
-$ mdp get [domain] [login]
+$ mdp
 ```
 
-To add a new password:
-```sh
-$ mdp set [domain] [login]
-```
+You can also use these parameters:
 
-To delete an existing password:
-```sh
-$ mdp del [domain] [login]
-```
+`-h --help`
+Output version information and exit
 
-All the arguments are optional.
+`-v --version`
+Output version information and exit
 
 ## License
 Copyright 2015 Pierre Faivre. This is free software, and may be redistributed

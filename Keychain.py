@@ -52,14 +52,13 @@ class Keychain:
 
         return json_passwords
 
-    def filter(self, domain="", login=""):
+    def filter(self, pattern=""):
         """ Returns a list of passwords filtered by their domain and login.
-        :param domain: Filter by domain.
-        :param login: Filter by login.
+        :param pattern: Filter by domain or login.
         :return: A list of passwords matching the filters
         """
         return [p for p in self._passwords
-                if domain in p.domain and login in p.login]
+                if pattern in p.domain or pattern in p.login]
 
     def set(self, domain, login, password, replace=False):
         """ Defines a new password or change an existing one

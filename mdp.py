@@ -4,8 +4,8 @@ __title__ = "mdp"
 __copyright__ = "Copyright 2015, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPL"
-__version__ = "0.3.0"
-__date__ = "2015-08-13"
+__version__ = "0.4.0"
+__date__ = "2015-08-20"
 __maintainer__ = "Pierre Faivre"
 __status__ = "Development"
 
@@ -14,7 +14,12 @@ import os
 from os.path import expanduser
 import sys
 
-from Cli import Cli
+try:
+    # Using Curses as default interface
+    from ui.Urwid import Urwid as User_interface
+except ImportError:
+    # Using Cli as a fallback interface if curses is unavailable
+    from ui.Cli import Cli as User_interface
 
 DEFAULT_OUTPUT_DIR = expanduser("~")
 
@@ -24,8 +29,8 @@ def print_version():
 
 
 def print_help():
-    print("{0} {1} {2}".format(__title__, __version__, __copyright__))
-    print("usage:\nmdp [get|set|del] [domain] [login]")
+    print_version()
+    print("usage:\nmdp")
 
 
 def main(argv: list):
@@ -36,13 +41,6 @@ def main(argv: list):
     # Checking arguments
     if len(argv) == 0:
         mode = "interactive"
-    elif argv[0] in ("get", "set", "del"):
-        mode = argv[0]
-        # Getting optional arguments domain and login
-        if len(argv) > 1:
-            domain = argv[1]
-        if len(argv) > 2:
-            login = argv[2]
     elif argv[0] in ("-v", "--version"):
         print_version()
         sys.exit(0)
@@ -59,8 +57,16 @@ def main(argv: list):
     pass_file_path = os.path.join(DEFAULT_OUTPUT_DIR, "pass.txt")
 
     # Starting user interface
-    cli = Cli(pass_file_path)
-    cli.start(mode, domain, login)
+    try:
+        ui_obj = User_interface(pass_file_path)
+        ui_obj.start()
+    except OSError:
+        print()
+        print("Failing to use the advanced interface. "
+              "Switching back to the classic interface.", file=sys.stderr)
+        from ui.Cli import Cli as Fallback_user_interface
+        ui_obj = Fallback_user_interface(pass_file_path)
+        ui_obj.start()
 
 
 if __name__ == '__main__':

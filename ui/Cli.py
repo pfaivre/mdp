@@ -11,20 +11,19 @@ except ImportError:
     print("mdp: Error: The module pyperclip is missing", file=sys.stderr)
     sys.exit(1)
 
-from Cryptography import Cryptography, CorruptedError
 from Keychain import Keychain
+from ui.BaseInterface import BaseInterface
 
 
 VALID_COMMANDS = ("get", "set", "del", "exit")
 
 
-class Cli:
-    """ Command line user interface
+class Cli(BaseInterface):
+    """ Basic command line user interface
     """
 
     def __init__(self, file_path):
-        self._master_password = None
-        self._file_path = file_path
+        super().__init__(file_path)
 
         if not os.path.isfile(self._file_path):
             print("{0} is not found, it will be created."
@@ -53,92 +52,33 @@ class Cli:
 
         self._save_pass_file(Keychain())
 
-    def _load_pass_file(self):
-        """ Loads passwords from the crypted Json file
-        :return: List of the passwords in the file
-        :rtype : Keychain
-        """
-        with open(self._file_path, "rb") as file:
-            file_crypted = file.read()
-
-        c = Cryptography()
-        correct_password = False
-        while not correct_password:
-            if self._master_password is not None:
-                try:
-                    correct_password = c.validate(file_crypted,
-                                                  self._master_password)
-                except CorruptedError:
-                    print("mdp: Error: The file '{0}' seems to be corrupted."
-                          .format(self._file_path),
-                          file=sys.stderr)
-                    sys.exit(1)
-
-            if not correct_password:
-                if self._master_password is not None:
-                    print("Wrong password, try again.")
-                self._master_password = getpass()
-
-        try:
-            file_decrypted = c.decrypt(file_crypted, self._master_password)
-        except UnicodeDecodeError as e:
-            print("mdp: Error: Unable to decrypt the file. " + e.__str__(),
-                  file=sys.stderr)
-            sys.exit(1)
-
-        try:
-            passwords = Keychain(file_decrypted)
-        except ValueError as e:
-            print("mdp: Error: Unable to parse the file. " + e.__str__(),
-                  file=sys.stderr)
-            sys.exit(1)
-
-        return passwords
-
-    def _save_pass_file(self, passwords):
-        """ Encrypt and save a Json file containing the passwords
-        :param passwords: List of the passwords to write
-        :type passwords: Keychain
-        """
-        json_passwords = passwords.to_json()
-
-        c = Cryptography()
-        crypted_passwords = c.encrypt(json_passwords, self._master_password)
-
-        with open(self._file_path, 'wb') as file:
-            file.write(crypted_passwords)
-
-    def start(self, mode="interactive", domain=None, login=None):
-        if mode == "interactive":
-            mode = ""
-            while mode not in VALID_COMMANDS:
-                mode = input("What do you want to do? {0}\n> "
-                             .format(VALID_COMMANDS))
-                if mode not in VALID_COMMANDS:
-                    print("Unknown command : '{0}'".format(mode))
+    def start(self):
+        mode = ""
+        while mode not in VALID_COMMANDS:
+            mode = input("What do you want to do? {0}\n> "
+                         .format(VALID_COMMANDS))
+            if mode not in VALID_COMMANDS:
+                print("Unknown command : '{0}'".format(mode))
 
         if mode == "get":
-            self.get_password(domain, login)
+            self.get_password()
         elif mode == "set":
-            self.set_password(domain, login)
+            self.set_password()
         elif mode == "del":
-            self.del_password(domain, login)
+            self.del_password()
         elif mode == "exit":
             return
 
-    def get_password(self, domain=None, login=None):
+    def get_password(self, pattern=None):
         """ Helps the user to get a password
-        :param domain: Filter by domain
-        :param login: Filter by login
+        :param pattern: Filter
         """
         passwords = self._load_pass_file()
 
-        if domain is None:
-            domain = input("Any specific domain? (leave blank if not) > ")
-        if login is None:
-            login = input("Any specific login? (leave blank if not) > ")
+        if pattern is None:
+            pattern = input("Any specific domain or login? (leave blank if not) > ")
 
-        match_passwords = passwords.filter(domain, login)
+        match_passwords = passwords.filter(pattern)
 
         if len(match_passwords) <= 0:
             print("No account for theses filters.")
@@ -193,20 +133,17 @@ class Cli:
         # And finally write it on the file
         self._save_pass_file(passwords)
 
-    def del_password(self, domain=None, login=None):
+    def del_password(self, pattern=None):
         """ Helps the user to delete a(some) password(s)
-        :param domain: Filter by domain
-        :param login: Filter by login
+        :param pattern: Filter
         """
         passwords = self._load_pass_file()
 
-        if domain is None:
-            domain = input("Any specific domain? (leave blank if not) > ")
-        if login is None:
-            login = input("Any specific login? (leave blank if not) > ")
+        if pattern is None:
+            pattern = input("Any specific domain or login? (leave blank if not) > ")
 
         # Filtering results
-        match_passwords = passwords.filter(domain, login)
+        match_passwords = passwords.filter(pattern)
 
         if len(match_passwords) <= 0:
             print("No account for theses filters.")
