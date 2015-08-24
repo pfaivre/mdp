@@ -5,7 +5,7 @@ __copyright__ = "Copyright 2015, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPL"
 __version__ = "0.4.0"
-__date__ = "2015-08-20"
+__date__ = "2015-08-24"
 __maintainer__ = "Pierre Faivre"
 __status__ = "Development"
 
@@ -18,7 +18,7 @@ try:
     # Using Curses as default interface
     from ui.Urwid import Urwid as User_interface
 except ImportError:
-    # Using Cli as a fallback interface if curses is unavailable
+    # Using Cli as a fallback interface if urwid is unavailable
     from ui.Cli import Cli as User_interface
 
 DEFAULT_OUTPUT_DIR = expanduser("~")
@@ -33,7 +33,7 @@ def print_help():
     print("usage:\nmdp")
 
 
-def main(argv: list):
+def main(argv):
     mode = ""
     domain = None
     login = None
@@ -63,7 +63,7 @@ def main(argv: list):
     except OSError:
         print()
         print("Failing to use the advanced interface. "
-              "Switching back to the classic interface.", file=sys.stderr)
+              "Switching back to the classic one.", file=sys.stderr)
         from ui.Cli import Cli as Fallback_user_interface
         ui_obj = Fallback_user_interface(pass_file_path)
         ui_obj.start()
