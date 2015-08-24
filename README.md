@@ -7,8 +7,10 @@ mdp - User friendly password storage tool.
 It comes from the french "*Mot De Passe*"
 
 ## Description
-this program can store your passwords on a crypted file and allows you to acces
+this program can store your passwords on a crypted file and allows you to access
 it in a very simple way.
+
+![mdp in action](docs/images/mdp-0.4.0.gif)
 
 Each password has 3 informations:
 * Domain : (or service or URL) where the account is registered
@@ -22,13 +24,13 @@ with a master password using the highly secure AES algorithm.
 ## Usage
 The program is fully interactive :
 ```sh
-$ mdp
+$ mdp.py
 ```
 
 You can also use these parameters:
 
 `-h --help`
-Output version information and exit
+Output some help and exit
 
 `-v --version`
 Output version information and exit
