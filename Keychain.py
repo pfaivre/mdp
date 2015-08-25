@@ -6,10 +6,26 @@ import json
 class Password:
     """ Represents a password for a couple login/domain
     """
-    def __init__(self, domain, login, password):
+    def __init__(self, domain="", login="", password=""):
         self.domain = domain
         self.login = login
         self.password = password
+
+    def __lt__(self, other):
+        """ Compares by domain and login
+        """
+        if self.domain == other.domain:
+            return self.login.lower() < other.login.lower()
+        else:
+            return self.domain.lower() < other.domain.lower()
+
+    def __gt__(self, other):
+        """ Compares by domain and login
+        """
+        if self.domain == other.domain:
+            return self.login.lower() > other.login.lower()
+        else:
+            return self.domain.lower() > other.domain.lower()
 
     def __repr__(self):
         return "{0} {1}".format(self.domain, self.login)
@@ -52,13 +68,22 @@ class Keychain:
 
         return json_passwords
 
-    def filter(self, pattern=""):
+    def filter(self, pattern="", ignore_case=False):
         """ Returns a list of passwords filtered by their domain and login.
         :param pattern: Filter by domain or login.
-        :return: A list of passwords matching the filters
+        :param ignore_case: The search is not case sensitive.
+        :return: A list of passwords matching the filters.
         """
-        return [p for p in self._passwords
-                if pattern in p.domain or pattern in p.login]
+        if ignore_case:
+            pattern = pattern.lower()
+            filtered = [p for p in self._passwords
+                        if pattern in p.domain.lower()
+                        or pattern in p.login.lower()]
+        else:
+            filtered = [p for p in self._passwords
+                        if pattern in p.domain or pattern in p.login]
+
+        return filtered
 
     def set(self, domain, login, password, replace=False):
         """ Defines a new password or change an existing one

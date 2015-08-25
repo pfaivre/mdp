@@ -74,6 +74,9 @@ class TestKeychain(TestCase):
         self.assertEqual(len(self.keychain.filter("my_mail")), 2,
                          "Only 2 passwords which login contains 'my_mail'.")
 
+        self.assertEqual(len(self.keychain.filter("My_MaIl", True)), 2,
+                         "With ignore_case, we should get 2 entries.")
+
     def test_set(self):
         new_password = "different_password\/-.*"
 
