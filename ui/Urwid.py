@@ -1,7 +1,25 @@
 #!/usr/bin/env python3
 
-# TODO: Add a Legal notice on top of each file
+#     mdp - Advanced user interface using Urwid
+#     Copyright (C) 2015 Pierre Faivre
+#
+#     This program is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 3 of the License, or
+#     any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License along
+#     with this program; if not, write to the Free Software Foundation, Inc.,
+#     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 # TODO: Add a settings page to change master password, path file, etc.
+# TODO: Support translations
+# TODO: Add a status bar to display messages and shortcuts
 
 from getpass import getpass
 import os

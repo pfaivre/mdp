@@ -1,11 +1,28 @@
 #!/usr/bin/env python3
 
+#     mdp - User friendly password storage tool
+#     Copyright (C) 2015 Pierre Faivre
+#
+#     This program is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 3 of the License, or
+#     any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License along
+#     with this program; if not, write to the Free Software Foundation, Inc.,
+#     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 __title__ = "mdp"
 __copyright__ = "Copyright (C) 2015, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPLv3+"
 __version__ = "0.4.0"
-__date__ = "2015-08-27"
+__date__ = "2015-08-28"
 __maintainer__ = "Pierre Faivre"
 __status__ = "Development"
 
@@ -29,10 +46,9 @@ def print_version():
     print("{0}".format(__copyright__))
     print()
     print("This program comes with ABSOLUTELY NO WARRANTY.")
-    print("This is free software, and you are welcome to redistribute it"
-          "{new_line}under certain conditions; "
-          "see the LICENCE file for more information."
-          .format(new_line=os.linesep))
+    print("This is free software, and you are welcome to redistribute it\n"
+          "under certain conditions; "
+          "see the LICENCE file for more information.")
 
 
 def print_help():
