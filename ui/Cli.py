@@ -10,6 +10,10 @@ except ImportError:
     # TODO: Make the pyperclip missing error non blocking
     print("mdp: Error: The module pyperclip is missing", file=sys.stderr)
     sys.exit(1)
+except Exception as e:
+    print("mdp: Error: Unable to initialize pyperclip: {error}"
+          .format(error=e), file=sys.stderr)
+    sys.exit(1)
 
 from Keychain import Keychain
 from ui.BaseInterface import BaseInterface

@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 
-import urwid
+# TODO: Add a Legal notice on top of each file
+# TODO: Add a settings page to change master password, path file, etc.
+
 from getpass import getpass
 import os
-import sys
 
+import urwid
 try:
     import pyperclip as pyperclip
+    # TODO: find a way to detect not compatible terminals such as TTYs.
+    pyperclip_available = True
 except ImportError:
-    # TODO: Make the pyperclip missing error non blocking
-    print("mdp: Error: The module pyperclip is missing", file=sys.stderr)
-    sys.exit(1)
+    print("mdp: Warning: The module pyperclip is missing.{new_line}"
+          "You will not be able to use the clipboard"
+          .format(new_line=os.linesep))
+    pyperclip_available = False
+except Exception as e:
+    print("mdp: Warning: Unable to initialize the pyperclip module: {error}"
+          .format(error=e))
+    pyperclip_available = False
 
-from Keychain import Keychain
+from Keychain import Keychain, Password
 from ui.BaseInterface import BaseInterface
 
 
@@ -85,26 +94,6 @@ class ListBoxEvent(urwid.ListBox):
         return key
 
 
-class PasswordMenuDialog(urwid.WidgetWrap):
-    """ A dialog that appears with nothing but a close button
-    """
-    signals = ['close']
-
-    def __init__(self):
-        l = []
-        l.append(urwid.Button("Copy the domain in the clipboard"))
-        l.append(urwid.Button("Copy the login in the clipboard"))
-        l.append(urwid.Button("Copy the password in the clipboard"))
-        close_button = urwid.Button("Close")
-        urwid.connect_signal(close_button, 'click',
-                             lambda button: self._emit("close"))
-        l.append(close_button)
-        listbox = urwid.ListBox(urwid.SimpleListWalker(l))
-
-        fill = urwid.Filler(listbox)
-        super().__init__(urwid.AttrWrap(fill, 'popup menu'))
-
-
 #
 # Main frame
 #
@@ -126,13 +115,12 @@ class Urwid(BaseInterface):
 
         # Color scheme for the interface
         self.palette = palette = [
-            ('root',          'default',    'default'),
-            ('edit',          'default',    'default'),
+            ('root',          'dark gray',  'default'),
             ('button normal', 'default',    'default',      'standout'),
             ('button select', 'default',    'dark magenta'),
-            ('popup menu',    'default',    'default')
+            ('edit normal',   'default',    'default'),
+            ('edit focus',    'default',    'dark blue'),
         ]
-
         self.window = urwid.WidgetPlaceholder(urwid.SolidFill())
 
     def _create_pass_file(self):
@@ -199,73 +187,106 @@ class Urwid(BaseInterface):
     def _refresh_list(self):
         """ Updates the password list given the filter textbox
         """
+        filtered = self._passwords.filter(self.filter_textbox.edit_text, True)
+        filtered = sorted(filtered)
+
         # Passwords buttons
-        filtered = self._passwords.filter(self.filter_textbox.edit_text)
         l = []
         for p in filtered:
             b = urwid.Button("{0} - {1}".format(p.domain, p.login),
-                             on_press=self._select_password)
-            b.user_data = {"password": p}
+                             on_press=self._open_password_menu,
+                             user_data={"password": p})
             b = urwid.AttrWrap(b, 'button normal', 'button select')
             l.append(b)
 
         # New password button at the end
         b = urwid.Button("[+] New entry",
                          on_press=self._open_edit_password_dialog,
-                         user_data={"domain": "", "login": "", "password": ""})
+                         user_data={"password": Password()})
         b = urwid.AttrWrap(b, 'button normal', 'button select')
         l.append(b)
 
         self.listbox.body = urwid.SimpleListWalker(l)
 
-    def _open_menu(self, title, choices):
+    def _open_password_menu(self, button, user_data):
+        """ Opens the menu for a password
         """
-        :param title: Title to show at the top
-        :type title: str
-        :param choices: List of urwid.Buttons
-        :type choices: list
-        """
+        p = user_data["password"]
 
         def dismiss(button=None):
             self.window.original_widget = self.window.original_widget.bottom_w
 
-        body = [urwid.Text(title, align='center'), urwid.Divider('\u2500')]
-        body.extend(choices)
-        body.append(urwid.Button("Return", on_press=dismiss))
+        def delete_password(button=None):
+            # TODO: Add a confirmation dialog box
+            self._delete_password(p)
+            dismiss()
+
+        def edit_password(button, user_data):
+            dismiss()
+            self._open_edit_password_dialog(button, user_data)
+
+        body = [urwid.Text(p.domain + " - " + p.login, align='center'),
+                urwid.Divider('\u2500')]
+        if pyperclip_available:
+            body.extend([
+                self._new_button("Copy the password in the clipboard",
+                                 on_press=lambda b: pyperclip.copy(p.password)),
+                self._new_button("Copy the domain in the clipboard",
+                                 on_press=lambda b: pyperclip.copy(p.domain)),
+                self._new_button("Copy the login in the clipboard",
+                                 on_press=lambda b: pyperclip.copy(p.login))
+            ])
+        body.extend([
+            self._new_button("Edit this entry",
+                             on_press=edit_password,
+                             user_data={"password": p,
+                                        "replace": True}),
+            self._new_button("Delete this entry",
+                             on_press=delete_password),
+            self._new_button("Return", on_press=dismiss)
+        ])
+
         menu = urwid.LineBox(urwid.ListBox(urwid.SimpleListWalker(body)))
+
         self.window.original_widget = urwid.Overlay(
             menu,
             self.window.original_widget,
             align='center', width=('relative', 80),
             valign='middle', height=('relative', 80),
             min_width=24, min_height=8,
-            left=2,
-            right=2,
-            top=2,
-            bottom=2)
+            left=2, right=2,
+            top=2, bottom=2)
 
     def _open_edit_password_dialog(self, button, user_data):
         """ Opens a dialog to edit or add a password
         """
-        d = urwid.Edit("Domain: ", edit_text=user_data["domain"])
-        l = urwid.Edit("Login: ")
-        p = urwid.Edit("Password: ")
+        p_obj = user_data["password"] if "password" \
+                                         in user_data else Password()
+        d = self._new_edit("Domain: ", edit_text=p_obj.domain)
+        l = self._new_edit("Login: ", edit_text=p_obj.login)
+        p = self._new_edit("Password: ", edit_text=p_obj.password)
+        replace = user_data["replace"] if "replace" in user_data else False
 
         def dismiss(button=None):
             self.window.original_widget = self.window.original_widget.bottom_w
 
         def save_entry(button):
-            self._passwords.set(d.edit_text, l.edit_text, p.edit_text)
-            self._refresh_list()
-            dismiss()
+            if d.edit_text is not "" or l.edit_text is not "":
+                if replace:
+                    self._passwords.delete(p_obj)
+                self._passwords.set(d.edit_text.strip(), l.edit_text.strip(),
+                                    p.edit_text.strip(), replace)
+                self._save_pass_file(self._passwords)
+                self._refresh_list()
+                dismiss()
 
         body = [urwid.Text("Password", align='center'),
                 urwid.Divider('\u2500'),
                 d,
                 l,
                 p,
-                urwid.Button("Ok", on_press=save_entry),
-                urwid.Button("Cancel", on_press=dismiss)]
+                self._new_button("Save", on_press=save_entry),
+                self._new_button("Cancel", on_press=dismiss)]
 
         menu = urwid.LineBox(urwid.ListBox(urwid.SimpleListWalker(body)))
         self.window.original_widget = urwid.Overlay(
@@ -274,23 +295,38 @@ class Urwid(BaseInterface):
             align='center', width=('relative', 80),
             valign='middle', height=('relative', 80),
             min_width=24, min_height=8,
-            left=2,
-            right=2,
-            top=2,
-            bottom=2)
+            left=2, right=2,
+            top=2, bottom=2)
 
-    def _select_password(self, button):
-        p = button.user_data["password"]
-        self._open_menu(
-            repr(p),
-            [urwid.Button("Copy the password in the clipboard",
-                          on_press=lambda b: pyperclip.copy(p.password)),
-             urwid.Button("Copy the domain in the clipboard",
-                          on_press=lambda b: pyperclip.copy(p.domain)),
-             urwid.Button("Copy the login in the clipboard",
-                          on_press=lambda b: pyperclip.copy(p.login)),
-             urwid.Button("Edit this entry"),
-             urwid.Button("Delete this entry")])
+    def _delete_password(self, password):
+        """ Deletes a password from the keychain and return True on success.
+        :param password: Password object to delete
+        :type password: Password
+        :rtype : bool
+        """
+        success = self._passwords.delete(password)
+        if success:
+            self._save_pass_file(self._passwords)
+            self._refresh_list()
+        return success
+
+    def _new_button(self, *args, **kwargs):
+        """ Returns an urwid.Button wrapped with 'button normal' and
+        'button select' attributes.
+        It takes the same parameters as the Button class.
+        """
+        b = urwid.Button(*args, **kwargs)
+        b = urwid.AttrWrap(b, 'button normal', 'button select')
+        return b
+
+    def _new_edit(self, *args, **kwargs):
+        """ Returns an urwid.Edit wrapped with 'edit normal' and
+        'button focus' attributes.
+        It takes the same parameters as the Edit class.
+        """
+        e = urwid.Edit(*args, **kwargs)
+        e = urwid.AttrWrap(e, 'edit normal', 'edit focus')
+        return e
 
     def _focus_to_list(self):
         """ Gives the focus to the list if it is not empty
