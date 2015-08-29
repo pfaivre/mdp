@@ -18,7 +18,28 @@
 #     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from getpass import getpass
+from os import path
 import sys
+
+# l10n configuration
+# To generate POT file:
+# $ xgettext --language=Python --keyword=_ --add-comments="." --output=./locale/mdp.pot *.py ui/*.py
+import locale
+import gettext
+# ./../locale
+locale_dir = path.join(path.dirname(path.dirname(path.realpath(__file__))),
+                       'locale')
+USER_LOCALE = locale.getlocale()[0]
+USER_LOCALE = USER_LOCALE if USER_LOCALE is not None else 'en'
+try:
+    # Trying to get the translations given the user localization.
+    lang = gettext.translation('mdp',
+                               localedir=locale_dir,
+                               languages=[USER_LOCALE])
+    lang.install()
+except FileNotFoundError:
+    # If the localization is not found, fall back to the default strings.
+    _ = lambda s: s
 
 from Cryptography import Cryptography, CorruptedError
 from Keychain import Keychain
@@ -40,7 +61,7 @@ class BaseInterface:
         :return: List of the passwords in the file
         :rtype : Keychain
         """
-        with open(self._file_path, "rb") as file:
+        with open(self._file_path, 'rb') as file:
             file_crypted = file.read()
 
         c = Cryptography()
@@ -51,27 +72,29 @@ class BaseInterface:
                     correct_password = c.validate(file_crypted,
                                                   self._master_password)
                 except CorruptedError:
-                    print("mdp: Error: The file '{0}' seems to be corrupted."
-                          .format(self._file_path),
+                    print(_("mdp: Error: The file '{filename}' seems to be"
+                            "corrupted.").format(filename=self._file_path),
                           file=sys.stderr)
                     sys.exit(1)
 
             if not correct_password:
                 if self._master_password is not None:
-                    print("Wrong password, try again.")
-                self._master_password = getpass()
+                    print(_("Wrong password, try again."))
+                self._master_password = getpass(prompt=_("Password: "))
 
         try:
             file_decrypted = c.decrypt(file_crypted, self._master_password)
         except UnicodeDecodeError as e:
-            print("mdp: Error: Unable to decrypt the file. " + e.__str__(),
+            print(_("mdp: Error: Unable to decrypt the file. {error}")
+                  .format(error=e.__str__()),
                   file=sys.stderr)
             sys.exit(1)
 
         try:
             passwords = Keychain(file_decrypted)
         except ValueError as e:
-            print("mdp: Error: Unable to parse the file. " + e.__str__(),
+            print(_("mdp: Error: Unable to parse the file. {error}")
+                  .format(error=e.__str__()),
                   file=sys.stderr)
             sys.exit(1)
 

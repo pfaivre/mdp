@@ -18,11 +18,31 @@
 #     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 # TODO: Add a settings page to change master password, path file, etc.
-# TODO: Support translations
 # TODO: Add a status bar to display messages and shortcuts
 
 from getpass import getpass
 import os
+from os import path
+
+# l10n configuration
+# To generate POT file:
+# $ xgettext --language=Python --keyword=_ --add-comments="." --output=./locale/mdp.pot *.py ui/*.py
+import locale
+import gettext
+# ./../locale
+locale_dir = path.join(path.dirname(path.dirname(path.realpath(__file__))),
+                       'locale')
+USER_LOCALE = locale.getlocale()[0]
+USER_LOCALE = USER_LOCALE if USER_LOCALE is not None else 'en'
+try:
+    # Trying to get the translations given the user localization.
+    lang = gettext.translation('mdp',
+                               localedir=locale_dir,
+                               languages=[USER_LOCALE])
+    lang.install()
+except FileNotFoundError:
+    # If the localization is not found, fall back to the default strings.
+    _ = lambda s: s
 
 import urwid
 try:
@@ -30,12 +50,11 @@ try:
     # TODO: find a way to detect not compatible terminals such as TTYs.
     pyperclip_available = True
 except ImportError:
-    print("mdp: Warning: The module pyperclip is missing.{new_line}"
-          "You will not be able to use the clipboard"
-          .format(new_line=os.linesep))
+    print(_("mdp: Warning: The module pyperclip is missing.\n"
+            "You will not be able to use the clipboard"))
     pyperclip_available = False
 except Exception as e:
-    print("mdp: Warning: Unable to initialize the pyperclip module: {error}"
+    print(_("mdp: Warning: Unable to initialize the pyperclip module: {error}")
           .format(error=e))
     pyperclip_available = False
 
@@ -125,8 +144,8 @@ class Urwid(BaseInterface):
         super().__init__(file_path)
 
         if not os.path.isfile(self._file_path):
-            print("{0} is not found, it will be created."
-                  .format(self._file_path))
+            print(_("{filename} is not found, it will be created.")
+                  .format(filename=self._file_path))
             self._create_pass_file()
 
         self._passwords = self._load_pass_file()
@@ -144,26 +163,26 @@ class Urwid(BaseInterface):
     def _create_pass_file(self):
         """ Create a new pass file
         """
-        print("Please enter a password to protect this file.")
+        print(_("Please enter a password to protect this file."))
 
         password_match = False
         while not password_match:
-            new_password = getpass(prompt="New password: ")
+            new_password = getpass(prompt=_("New password: "))
             if len(new_password) < 3:
-                print("The password must have at least 3 characters.")
+                print(_("The password must have at least 3 characters."))
                 continue
 
-            confirm_password = getpass(prompt="Confirm password: ")
+            confirm_password = getpass(prompt=_("Confirm password: "))
 
             if not new_password.__eq__(confirm_password):
-                print("The passwords don't match, please retry.")
+                print(_("The passwords don't match, please retry."))
             else:
                 self._master_password = new_password
                 password_match = True
 
         self._save_pass_file(Keychain())
 
-    def start(self, mode="interactive", domain=None, login=None):
+    def start(self, mode='interactive', domain=None, login=None):
 
         self.window = self._construct()
 
@@ -176,7 +195,7 @@ class Urwid(BaseInterface):
         :return: The main container
         """
         # The header
-        self.filter_textbox = EditEvent("Filter: ", multiline=False)
+        self.filter_textbox = EditEvent(_("Filter: "), multiline=False)
         self.filter_textbox.set_on_text_edit(self._refresh_list)
         self.filter_textbox.set_on_validation(self._focus_to_list)
         self.filter_textbox.set_on_exit(self._exit_application)
@@ -205,7 +224,8 @@ class Urwid(BaseInterface):
     def _refresh_list(self):
         """ Updates the password list given the filter textbox
         """
-        filtered = self._passwords.filter(self.filter_textbox.edit_text, True)
+        pattern = self.filter_textbox.edit_text.strip()
+        filtered = self._passwords.filter(pattern, True)
         filtered = sorted(filtered)
 
         # Passwords buttons
@@ -213,14 +233,14 @@ class Urwid(BaseInterface):
         for p in filtered:
             b = urwid.Button("{0} - {1}".format(p.domain, p.login),
                              on_press=self._open_password_menu,
-                             user_data={"password": p})
+                             user_data={'password': p})
             b = urwid.AttrWrap(b, 'button normal', 'button select')
             l.append(b)
 
         # New password button at the end
-        b = urwid.Button("[+] New entry",
+        b = urwid.Button(_("[+] New entry"),
                          on_press=self._open_edit_password_dialog,
-                         user_data={"password": Password()})
+                         user_data={'password': Password()})
         b = urwid.AttrWrap(b, 'button normal', 'button select')
         l.append(b)
 
@@ -229,7 +249,7 @@ class Urwid(BaseInterface):
     def _open_password_menu(self, button, user_data):
         """ Opens the menu for a password
         """
-        p = user_data["password"]
+        p = user_data['password']
 
         def dismiss(button=None):
             self.window.original_widget = self.window.original_widget.bottom_w
@@ -247,21 +267,22 @@ class Urwid(BaseInterface):
                 urwid.Divider('\u2500')]
         if pyperclip_available:
             body.extend([
-                self._new_button("Copy the password in the clipboard",
+                self._new_button(_("Copy the password in the clipboard"),
                                  on_press=lambda b: pyperclip.copy(p.password)),
-                self._new_button("Copy the domain in the clipboard",
+                self._new_button(_("Copy the domain in the clipboard"),
                                  on_press=lambda b: pyperclip.copy(p.domain)),
-                self._new_button("Copy the login in the clipboard",
+                self._new_button(_("Copy the login in the clipboard"),
                                  on_press=lambda b: pyperclip.copy(p.login))
             ])
         body.extend([
-            self._new_button("Edit this entry",
+            self._new_button(_("Edit this entry"),
                              on_press=edit_password,
-                             user_data={"password": p,
-                                        "replace": True}),
-            self._new_button("Delete this entry",
+                             user_data={'password': p,
+                                        'replace': True}),
+            self._new_button(_("Delete this entry"),
                              on_press=delete_password),
-            self._new_button("Return", on_press=dismiss)
+            #. TRANSLATORS: Back to the previous view.
+            self._new_button(_("Return"), on_press=dismiss)
         ])
 
         menu = urwid.LineBox(urwid.ListBox(urwid.SimpleListWalker(body)))
@@ -278,12 +299,12 @@ class Urwid(BaseInterface):
     def _open_edit_password_dialog(self, button, user_data):
         """ Opens a dialog to edit or add a password
         """
-        p_obj = user_data["password"] if "password" \
+        p_obj = user_data['password'] if 'password' \
                                          in user_data else Password()
-        d = self._new_edit("Domain: ", edit_text=p_obj.domain)
-        l = self._new_edit("Login: ", edit_text=p_obj.login)
-        p = self._new_edit("Password: ", edit_text=p_obj.password)
-        replace = user_data["replace"] if "replace" in user_data else False
+        d = self._new_edit(_("Domain: "), edit_text=p_obj.domain)
+        l = self._new_edit(_("Login: "), edit_text=p_obj.login)
+        p = self._new_edit(_("Password: "), edit_text=p_obj.password)
+        replace = user_data['replace'] if 'replace' in user_data else False
 
         def dismiss(button=None):
             self.window.original_widget = self.window.original_widget.bottom_w
@@ -298,13 +319,14 @@ class Urwid(BaseInterface):
                 self._refresh_list()
                 dismiss()
 
-        body = [urwid.Text("Password", align='center'),
+        #. TRANSLATORS: Title of the password menu.
+        body = [urwid.Text(_("Password"), align='center'),
                 urwid.Divider('\u2500'),
                 d,
                 l,
                 p,
-                self._new_button("Save", on_press=save_entry),
-                self._new_button("Cancel", on_press=dismiss)]
+                self._new_button(_("Save"), on_press=save_entry),
+                self._new_button(_("Cancel"), on_press=dismiss)]
 
         menu = urwid.LineBox(urwid.ListBox(urwid.SimpleListWalker(body)))
         self.window.original_widget = urwid.Overlay(
