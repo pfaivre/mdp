@@ -22,7 +22,7 @@ __copyright__ = "Copyright (C) 2015, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPLv3+"
 __version__ = "0.4.0"
-__date__ = "2015-08-30"
+__date__ = "2015-09-01"
 __maintainer__ = "Pierre Faivre"
 __status__ = "Development"
 
@@ -62,13 +62,44 @@ DEFAULT_OUTPUT_DIR = expanduser("~")
 
 
 def print_version():
+    """ Prints version of the program and libraries
+    :returns: Number of missing required libraries
+    """
+    missing_dep = 0
     print("{0} {1}".format(__title__, __version__))
     print("{0}".format(__copyright__))
+    print()
+    print(_("Loaded libraries:"))
+    try:
+        import colorama
+        print(" - Colorama\t{0}".format(colorama.__version__))
+    except AttributeError:
+        print(" - Colorama\t{0}".format(colorama.VERSION))
+    except ImportError:
+        pass
+    try:
+        import Crypto
+        print(" - pycrypto\t{0}".format(Crypto.__version__))
+    except ImportError:
+        print(" - pycrypto\t{0}".format(_("MISSING")))
+        missing_dep += 1
+    try:
+        import pyperclip
+        print(" - pyperclip\t{0}".format(pyperclip.__version__))
+    except ImportError:
+        print(" - pyperclip\t{0}".format(_("MISSING")))
+        missing_dep += 1
+    try:
+        import urwid
+        print(" - Urwid\t{0}".format(urwid.__version__))
+    except ImportError:
+        pass
     print()
     print(_("This program comes with ABSOLUTELY NO WARRANTY."))
     print(_("This is free software, and you are welcome to redistribute it\n"
             "under certain conditions; "
             "see the LICENCE file for more information."))
+    return missing_dep
 
 
 def print_help():
@@ -85,6 +116,7 @@ def print_help():
     print(_(" - Pyperclip, by Al Sweigart"))
     print(_(" - Urwid, Copyright (C) 2004-2012 Ian Ward"))
     print(_(" - pycrypto, by Dwayne Litzenberger"))
+    print(_(" - Colorama, Copyright Jonathan Hartley 2013"))
     print(_("Make sure to have them installed on your system in order to"
             "access all the\nfeatures."))
 
@@ -96,8 +128,8 @@ def main(argv):
     if len(argv) == 0:
         mode = 'interactive'
     elif argv[0] in ('-v', '--version'):
-        print_version()
-        sys.exit(0)
+        missing_dep = print_version()
+        sys.exit(missing_dep)
     elif argv[0] in ('-h', '--help'):
         print_help()
         sys.exit(0)

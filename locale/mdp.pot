@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-08-28 16:04+0200\n"
+"POT-Creation-Date: 2015-09-01 18:00+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,238 +17,250 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: mdp.py:64
+#: mdp.py:72
+msgid "Loaded libraries:"
+msgstr ""
+
+#: mdp.py:84 mdp.py:90
+msgid "MISSING"
+msgstr ""
+
+#: mdp.py:98
 msgid "This program comes with ABSOLUTELY NO WARRANTY."
 msgstr ""
 
-#: mdp.py:65
+#: mdp.py:99
 msgid ""
 "This is free software, and you are welcome to redistribute it\n"
 "under certain conditions; see the LICENCE file for more information."
 msgstr ""
 
-#: mdp.py:72
+#: mdp.py:107
 msgid ""
 "This program can store your passwords on an encrypted file and\n"
 "allows you to access it in a very simple way."
 msgstr ""
 
-#: mdp.py:75
+#: mdp.py:110
 msgid ""
 "This program is fully interactive. You can also use one of these commands:"
 msgstr ""
 
-#: mdp.py:77
+#: mdp.py:112
 msgid ""
 "\t-h, --help\n"
 "\t\tShows this help and exits"
 msgstr ""
 
-#: mdp.py:78
+#: mdp.py:113
 msgid ""
 "\t-v, --version\n"
 "\t\tShows version information and exits"
 msgstr ""
 
-#: mdp.py:80
+#: mdp.py:115
 msgid "mdp depends on these third party libraries:"
 msgstr ""
 
-#: mdp.py:81
+#: mdp.py:116
 msgid " - Pyperclip, by Al Sweigart"
 msgstr ""
 
-#: mdp.py:82
+#: mdp.py:117
 msgid " - Urwid, Copyright (C) 2004-2012 Ian Ward"
 msgstr ""
 
-#: mdp.py:83
+#: mdp.py:118
 msgid " - pycrypto, by Dwayne Litzenberger"
 msgstr ""
 
-#: mdp.py:84
+#: mdp.py:119
+msgid " - Colorama, Copyright Jonathan Hartley 2013"
+msgstr ""
+
+#: mdp.py:120
 msgid ""
 "Make sure to have them installed on your system in order toaccess all the\n"
 "features."
 msgstr ""
 
-#: mdp.py:101
+#: mdp.py:137
 #, python-brace-format
 msgid "mdp: error: unrecognized argument: {0}"
 msgstr ""
 
-#: mdp.py:115
+#: mdp.py:151
 msgid ""
 "Failing to use the advanced interface. Switching back to the classic one."
 msgstr ""
 
-#: mdp.py:130
+#: mdp.py:166
 #, python-brace-format
 msgid "Sorry the functionality '{0}' has not been implemented yet."
 msgstr ""
 
-#: ui/BaseInterface.py:70
+#: ui/BaseInterface.py:75
 #, python-brace-format
 msgid "mdp: Error: The file '{filename}' seems to becorrupted."
 msgstr ""
 
-#: ui/BaseInterface.py:77
+#: ui/BaseInterface.py:82
 msgid "Wrong password, try again."
 msgstr ""
 
-#: ui/BaseInterface.py:78 ui/Urwid.py:301
+#: ui/BaseInterface.py:83 ui/Urwid.py:306
 msgid "Password: "
 msgstr ""
 
-#: ui/BaseInterface.py:83
+#: ui/BaseInterface.py:88
 #, python-brace-format
 msgid "mdp: Error: Unable to decrypt the file. {error}"
 msgstr ""
 
-#: ui/BaseInterface.py:91
+#: ui/BaseInterface.py:96
 #, python-brace-format
 msgid "mdp: Error: Unable to parse the file. {error}"
 msgstr ""
 
-#: ui/Cli.py:44
+#: ui/Cli.py:62
 msgid "mdp: Error: The module pyperclip is missing"
 msgstr ""
 
-#: ui/Cli.py:47
+#: ui/Cli.py:65
 #, python-brace-format
 msgid "mdp: Error: Unable to initialize pyperclip: {error}"
 msgstr ""
 
-#: ui/Cli.py:68 ui/Urwid.py:142
+#: ui/Cli.py:84 ui/Urwid.py:147
 #, python-brace-format
 msgid "{filename} is not found, it will be created."
 msgstr ""
 
-#: ui/Cli.py:75 ui/Urwid.py:161
+#: ui/Cli.py:91 ui/Urwid.py:166
 msgid "Please enter a password to protect this file."
 msgstr ""
 
-#: ui/Cli.py:79 ui/Urwid.py:165
+#: ui/Cli.py:95 ui/Urwid.py:170
 msgid "New password: "
 msgstr ""
 
-#: ui/Cli.py:81 ui/Urwid.py:167
+#: ui/Cli.py:97 ui/Urwid.py:172
 msgid "The password must have at least 3 characters."
 msgstr ""
 
-#: ui/Cli.py:84 ui/Urwid.py:170
+#: ui/Cli.py:100 ui/Urwid.py:175
 msgid "Confirm password: "
 msgstr ""
 
-#: ui/Cli.py:87 ui/Urwid.py:173
+#: ui/Cli.py:103 ui/Urwid.py:178
 msgid "The passwords don't match, please retry."
 msgstr ""
 
-#: ui/Cli.py:97
+#: ui/Cli.py:115
 #, python-brace-format
 msgid ""
 "What do you want to do? {commands}\n"
 "> "
 msgstr ""
 
-#: ui/Cli.py:100
+#: ui/Cli.py:118
 #, python-brace-format
 msgid "Unknown command : '{0}'"
 msgstr ""
 
-#: ui/Cli.py:118 ui/Cli.py:185
+#: ui/Cli.py:136 ui/Cli.py:203
 msgid "Any specific domain or login?(leave blank if not) > "
 msgstr ""
 
-#: ui/Cli.py:124 ui/Cli.py:192
+#: ui/Cli.py:142 ui/Cli.py:210
 msgid "No account for theses filters."
 msgstr ""
 
-#: ui/Cli.py:137
+#: ui/Cli.py:155
 msgid "Which one? > "
 msgstr ""
 
-#: ui/Cli.py:144
+#: ui/Cli.py:162
 msgid "The password have been copied in the clipboard."
 msgstr ""
 
-#: ui/Cli.py:156
+#: ui/Cli.py:174
 msgid "Domain for the new password > "
 msgstr ""
 
-#: ui/Cli.py:158
+#: ui/Cli.py:176
 msgid "Login for the new password > "
 msgstr ""
 
-#: ui/Cli.py:159
+#: ui/Cli.py:177
 msgid "Password for this account > "
 msgstr ""
 
-#: ui/Cli.py:205
+#: ui/Cli.py:223
 msgid "Which ones to delete? > "
 msgstr ""
 
-#: ui/Urwid.py:48
+#: ui/Urwid.py:53
 msgid ""
 "mdp: Warning: The module pyperclip is missing.\n"
 "You will not be able to use the clipboard"
 msgstr ""
 
-#: ui/Urwid.py:52
+#: ui/Urwid.py:57
 #, python-brace-format
 msgid "mdp: Warning: Unable to initialize the pyperclip module: {error}"
 msgstr ""
 
-#: ui/Urwid.py:193
+#: ui/Urwid.py:198
 msgid "Filter: "
 msgstr ""
 
-#: ui/Urwid.py:236
+#: ui/Urwid.py:241
 msgid "[+] New entry"
 msgstr ""
 
-#: ui/Urwid.py:265
+#: ui/Urwid.py:270
 msgid "Copy the password in the clipboard"
 msgstr ""
 
-#: ui/Urwid.py:267
+#: ui/Urwid.py:272
 msgid "Copy the domain in the clipboard"
 msgstr ""
 
-#: ui/Urwid.py:269
+#: ui/Urwid.py:274
 msgid "Copy the login in the clipboard"
 msgstr ""
 
-#: ui/Urwid.py:273
+#: ui/Urwid.py:278
 msgid "Edit this entry"
 msgstr ""
 
-#: ui/Urwid.py:277
+#: ui/Urwid.py:282
 msgid "Delete this entry"
 msgstr ""
 
 #. . TRANSLATORS: Back to the previous view.
-#: ui/Urwid.py:280
+#: ui/Urwid.py:285
 msgid "Return"
 msgstr ""
 
-#: ui/Urwid.py:299
+#: ui/Urwid.py:304
 msgid "Domain: "
 msgstr ""
 
-#: ui/Urwid.py:300
+#: ui/Urwid.py:305
 msgid "Login: "
 msgstr ""
 
 #. . TRANSLATORS: Title of the password menu.
-#: ui/Urwid.py:318
+#: ui/Urwid.py:323
 msgid "Password"
 msgstr ""
 
-#: ui/Urwid.py:323
+#: ui/Urwid.py:328
 msgid "Save"
 msgstr ""
 
-#: ui/Urwid.py:324
+#: ui/Urwid.py:329
 msgid "Cancel"
 msgstr ""

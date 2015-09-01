@@ -43,6 +43,19 @@ except FileNotFoundError:
     _ = lambda s: s
 
 try:
+    import colorama
+    from colorama import Fore, Back, Style
+except ImportError:
+    # If colorama is unavailable, do nothing with its calls
+    class colorama:
+        @staticmethod
+        def init(*args, **kwargs):
+            pass
+    class Fore:
+        YELLOW = ""
+        RESET = ""
+
+try:
     import pyperclip as pyperclip
 except ImportError:
     # TODO: Make the pyperclip missing error non blocking
@@ -58,8 +71,6 @@ from ui.BaseInterface import BaseInterface
 
 
 VALID_COMMANDS = ('get', 'set', 'del', 'exit')
-YELLOW = "\033[00;33m"
-NORMAL = "\033[00;00m"
 
 
 class Cli(BaseInterface):
@@ -97,6 +108,8 @@ class Cli(BaseInterface):
         self._save_pass_file(Keychain())
 
     def start(self):
+        colorama.init(autoreset=True)
+
         mode = ''
         while mode not in VALID_COMMANDS:
             mode = input(_("What do you want to do? {commands}\n> ")
@@ -132,8 +145,8 @@ class Cli(BaseInterface):
         # Printing matching accounts
         for i, p in enumerate(match_passwords):
             print("    {yellow}{num}. {normal}{password}"
-                  .format(yellow=YELLOW, num=i+1,
-                          normal=NORMAL, password=p))
+                  .format(yellow=Fore.YELLOW, num=i+1,
+                          normal=Fore.RESET, password=p))
 
         # Selecting which one to get
         number = -1 if len(match_passwords) > 1 else 1
@@ -200,8 +213,8 @@ class Cli(BaseInterface):
         # Printing matching accounts
         for i, p in enumerate(match_passwords):
             print("    {yellow}{num}. {normal}{password}"
-                  .format(yellow=YELLOW, num=i+1,
-                          normal=NORMAL, password=p))
+                  .format(yellow=Fore.YELLOW, num=i+1,
+                          normal=Fore.RESET, password=p))
 
         # Selecting which ones to delete
         numbers = ()
