@@ -32,7 +32,7 @@ These commands will install everything you need:
 $ sudo pip3 install pyperclip
 $ sudo dnf install python3-crypto python3-urwid xclip
 ```
-**Python 3** and **colorama** are already shipped with the system.
+**Python 3** is already shipped with the system.
 
 ## Usage
 

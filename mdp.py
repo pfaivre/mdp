@@ -22,7 +22,7 @@ __copyright__ = "Copyright (C) 2015, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPLv3+"
 __version__ = "0.4.0"
-__date__ = "2015-09-01"
+__date__ = "2015-09-03"
 __maintainer__ = "Pierre Faivre"
 __status__ = "Development"
 
@@ -51,12 +51,6 @@ except FileNotFoundError:
     # If the localization is not found, fall back to the default strings.
     _ = lambda s: s
 
-try:
-    # Using Urwid as default interface
-    from ui.Urwid import Urwid as User_interface
-except ImportError:
-    # Using Cli as a fallback interface if urwid is unavailable
-    from ui.Cli import Cli as User_interface
 
 DEFAULT_OUTPUT_DIR = expanduser("~")
 
@@ -144,12 +138,21 @@ def main(argv):
 
     # Starting user interface
     try:
+        # Using Urwid as default interface
+        from ui.Urwid import Urwid as User_interface
+    except ImportError:
+        # Using Cli as a fallback interface if urwid is unavailable
+        from ui.Cli import Cli as User_interface
+    try:
         ui_obj = User_interface(pass_file_path)
         ui_obj.start()
     except OSError:
+        # This error happens on some very specific cases while using Urwid
+        # (like in PyCharm terminal)
         print()
         print(_("Failing to use the advanced interface. "
               "Switching back to the classic one."), file=sys.stderr)
+        # On this case we load Cli which does only basic "print" and "input"
         from ui.Cli import Cli as Fallback_user_interface
         ui_obj = Fallback_user_interface(pass_file_path)
         ui_obj.start()

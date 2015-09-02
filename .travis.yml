@@ -1,15 +1,12 @@
 language: python
 python:
-  - "3.2"
-  - "3.3"
   - "3.4"
 
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -y xclip
-  - sudo apt-get install -y python3-crypto
+  - sudo apt-get install -y xclip python3-crypto
 install:
-  - sudo pip install pyperclip urwid
+  - pip3 install pyperclip urwid
 
 script:
-  - python -m unittest discover
+  - python3 -m unittest discover
