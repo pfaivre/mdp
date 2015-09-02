@@ -9,7 +9,7 @@ works as well on other platforms.
 It depends on:
 * **Python 3**
 * [**Pyperclip**](https://pypi.python.org/pypi/pyperclip/1.5.11)
-* [**pycrypto**](https://www.dlitz.net/software/pycrypto/)
+* [**pycrypto**](https://www.dlitz.net/software/pycrypto/) (>=2.6)
 * [**Colorama**](https://pypi.python.org/pypi/colorama) (Optional)
 * [**Urwid**](http://urwid.org/) (Optional, not on Windows)
 

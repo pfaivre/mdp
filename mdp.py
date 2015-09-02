@@ -83,6 +83,9 @@ def print_version():
     except ImportError:
         print(" - pyperclip\t{0}".format(_("MISSING")))
         missing_dep += 1
+    except Exception as e:
+        print(" - pyperclip\tERROR : {0}".format(e))
+        missing_dep += 1
     try:
         import urwid
         print(" - Urwid\t{0}".format(urwid.__version__))

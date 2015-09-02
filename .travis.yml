@@ -4,6 +4,11 @@ python:
 
 sudo: false
 
+addons:
+  apt:
+    packages:
+    - xclip
+
 install:
   - pip install pyperclip urwid pycrypto>=2.6
 
