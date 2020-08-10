@@ -66,6 +66,27 @@ from ui.BaseInterface import BaseInterface
 # Custom widgets
 #
 
+class FrameEvent(urwid.Frame):
+    """ Frame with events
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._on_keypress = None
+
+    def set_on_keypress(self, callback):
+        """ Sets the event raised when a key is pressed
+        """
+        self._on_keypress = callback
+
+    def keypress(self, size, key):
+        ret = super().keypress(size, key)
+
+        if self._on_keypress:
+            self._on_keypress()
+
+        return ret
+
 
 class EditEvent(urwid.Edit):
     """ Edit widget with events
@@ -143,6 +164,9 @@ class Urwid(BaseInterface):
     def __init__(self, file_path):
         super().__init__(file_path)
 
+        self._auto_exit_alarm = None
+        self._loop = None
+
         if not os.path.isfile(self._file_path):
             print(_("{filename} is not found, it will be created.")
                   .format(filename=self._file_path))
@@ -151,7 +175,7 @@ class Urwid(BaseInterface):
         self._passwords = self._load_pass_file()
 
         # Color scheme for the interface
-        self.palette = palette = [
+        self.palette = [
             ('root',          'dark gray',  'default'),
             ('button normal', 'default',    'default',      'standout'),
             ('button select', 'default',    'dark magenta'),
@@ -186,9 +210,12 @@ class Urwid(BaseInterface):
 
         self.window = self._construct()
 
-        loop = urwid.MainLoop(self.window, palette=self.palette,
-                              unhandled_input=self._process_input)
-        loop.run()
+        self._loop = urwid.MainLoop(self.window, palette=self.palette,
+                                    unhandled_input=self._process_input)
+
+        self._reset_auto_exit_alarm()
+
+        self._loop.run()
 
     def _construct(self):
         """ Builds the interface
@@ -210,13 +237,14 @@ class Urwid(BaseInterface):
         self._refresh_list()
 
         # Whole frame
-        self.frame = urwid.Frame(header=header,
-                                 body=self.listbox,
-                                 focus_part='header')
+        self.frame = FrameEvent(header=header,
+                                body=self.listbox,
+                                focus_part='header')
+        self.frame.set_on_keypress(self._reset_auto_exit_alarm)
 
         # And finally the border around the frame
         linebox = urwid.LineBox(self.frame,
-                                title="{0} v{1}".format("mdp", "0.4.0"))
+                                title="{0} v{1}".format("mdp", "0.5.0"))
         linebox = urwid.AttrWrap(linebox, 'root')
 
         return linebox
@@ -310,7 +338,7 @@ class Urwid(BaseInterface):
             self.window.original_widget = self.window.original_widget.bottom_w
 
         def save_entry(button):
-            if d.edit_text is not "" or l.edit_text is not "":
+            if d.edit_text != "" or l.edit_text != "":
                 if replace:
                     self._passwords.delete(p_obj)
                 self._passwords.set(d.edit_text.strip(), l.edit_text.strip(),
@@ -379,8 +407,16 @@ class Urwid(BaseInterface):
         """
         self.frame.focus_position = 'header'
 
-    def _exit_application(self):
+    def _exit_application(self, *args):
         raise urwid.ExitMainLoop()
+
+    def _reset_auto_exit_alarm(self):
+        self._loop.remove_alarm(self._auto_exit_alarm)
+        
+        # Automatically close the application 5 minutes from now
+        self._auto_exit_alarm = self._loop.set_alarm_in(
+            300,
+            self._exit_application)
 
     def _process_input(self, key):
         if key in ('q', 'Q', 'esc', 'f10'):

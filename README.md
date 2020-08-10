@@ -6,6 +6,10 @@ mdp - User friendly password storage tool.
 
 It comes from the french "*Mot De Passe*"
 
+## Disclaimer
+This program offers no warranty. No security audits have been performed to 
+ensure any level of protection for the data that may be stored with it.
+
 ## Description
 this program can store your passwords on a encrypted file and allows you to
 access it in a very simple way.
@@ -39,6 +43,6 @@ Output some help and exit
 Output version information and exit
 
 ## License
-Copyright © 2015 Pierre Faivre. This is free software, and may be redistributed
+Copyright © 2015-2020 Pierre Faivre. This is free software, and may be redistributed
 under the terms specified in the LICENSE file.
 

@@ -3,7 +3,7 @@ Getting started
 
 ## Installation
 
-mdp has been tested on Windows 7, Linux Mint 17.2 and Fedora 22, but it should 
+mdp has been tested on Windows 7, Ubuntu 20.04 and Fedora 22, but it should 
 works as well on other platforms.
 
 It depends on:

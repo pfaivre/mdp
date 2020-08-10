@@ -18,11 +18,11 @@
 #     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 __title__ = "mdp"
-__copyright__ = "Copyright (C) 2015, Pierre Faivre"
+__copyright__ = "Copyright (C) 2015-2020, Pierre Faivre"
 __credits__ = ["Pierre Faivre"]
 __license__ = "GPLv3+"
-__version__ = "0.4.0"
-__date__ = "2015-09-03"
+__version__ = "0.5.0"
+__date__ = "2020-08-10"
 __maintainer__ = "Pierre Faivre"
 __status__ = "Development"
 
