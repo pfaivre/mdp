@@ -47,7 +47,8 @@ except FileNotFoundError:
 import urwid
 try:
     import pyperclip as pyperclip
-    # TODO: find a way to detect not compatible terminals such as TTYs.
+    # Try to use it, it will throw a PyperclipException if it can't
+    pyperclip.paste()
     pyperclip_available = True
 except ImportError:
     print(_("mdp: Warning: The module pyperclip is missing.\n"
