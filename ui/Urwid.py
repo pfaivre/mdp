@@ -133,11 +133,17 @@ class ListBoxEvent(urwid.ListBox):
         super().__init__(*args, **kwargs)
 
         self._on_search_key = None
+        self._on_mouse_event = None
 
     def set_on_search_key(self, callback):
         """ Sets the event raised on the search keys
         """
         self._on_search_key = callback
+
+    def set_on_mouse_event(self, callback):
+        """ Sets the event raised on the search keys
+        """
+        self._on_mouse_event = callback
 
     def keypress(self, size, key):
         ret = super().keypress(size, key)
@@ -151,6 +157,23 @@ class ListBoxEvent(urwid.ListBox):
 
         return key
 
+    def mouse_event(self, size, event, button, col, row, focus):
+        """Scroll when rolling the mouse wheel
+        """
+        ret = super().mouse_event(size, event, button, col, row, focus)
+
+        (maxcol, maxrow) = size
+
+        if "mouse press" == event:
+            if 4 == button:
+                self._keypress_up((maxcol, maxrow))
+            if 5 == button:
+                self._keypress_down((maxcol, maxrow))
+
+        if self._on_mouse_event:
+            self._on_mouse_event()
+
+        return ret
 
 #
 # Main frame
@@ -234,6 +257,10 @@ class Urwid(BaseInterface):
         # The body
         self.listbox = ListBoxEvent(())
         self.listbox.set_on_search_key(self._focus_to_filter_textbox)
+        def listbox_mouse_event():
+            self._reset_auto_exit_alarm()
+            self._focus_to_list()
+        self.listbox.set_on_mouse_event(listbox_mouse_event)
         self._refresh_list()
 
         # Whole frame
